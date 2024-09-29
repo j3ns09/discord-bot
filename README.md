@@ -1,1 +1,1 @@
-"# discord-bot" 
+The personalized bot of the discord server "thejenserver"

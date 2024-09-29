@@ -1,6 +1,5 @@
 import os
 import discord
-import youtube_dl
 from discord.ext import commands
 
 
@@ -15,13 +14,20 @@ intents = discord.Intents(4194303)
 
 bot : commands.Bot = commands.Bot(command_prefix="flih_", intents=intents)
 
+'''
+Le bot peut effectuer ces commandes spéciales avec le préfixe flih_
+
+Le bot répond aux messages contenant "juif" et "arabe"
+
+'''
+
 @bot.event
 async def on_ready():
     print(f"{bot.user.name} is connected and ready !")
 
 # === MUSIC ===
 
-@bot.command(name="join", help="Permet au bot de rejoindre un chat vocal.")
+@bot.command(help="Permet au bot de rejoindre un chat vocal.")
 async def viens(ctx):
     if ctx.author.voice:
         channel = ctx.author.voice.channel
@@ -29,7 +35,7 @@ async def viens(ctx):
     else:
         await ctx.send("tu dois être en voc pour m'appeler connard")
 
-@bot.command(name="play", help="Permet de jouer une musique dans un chat vocal")
+@bot.command(help="Permet de jouer une musique dans un chat vocal")
 async def joue(ctx):
     if ctx.author.voice:
         channel = ctx.author.voice.channel
@@ -53,10 +59,12 @@ async def on_message(message: discord.Message) -> None:
     if "juif" in text:
         response = "c'est moi qui vait te déporter si tu continues avec ça"
         await message.channel.send(response)
+        return
 
     if "arabe" in text:
         response = "toujours les mêmes"
         await message.channel.send(response)
+        return
 
     
 
