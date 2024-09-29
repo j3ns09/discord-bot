@@ -11,9 +11,9 @@ load_dotenv()
 TOKEN : str = os.getenv("DISCORD_TOKEN")
 GUILD : discord.Guild = os.getenv("DISCORD_GUILD")
 
-intent = discord.Intents(4194303)
+intents = discord.Intents(4194303)
 
-bot : commands.Bot = commands.Bot(command_prefix="flih_", intents=intent)
+bot : commands.Bot = commands.Bot(command_prefix="flih_", intents=intents)
 
 @bot.event
 async def on_ready():
