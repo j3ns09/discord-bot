@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-TOKEN = os.getenv("DISCORD_TOKEN")
+TOKEN : str = os.getenv("DISCORD_TOKEN")
 GUILD : discord.Guild = os.getenv("DISCORD_GUILD")
 
 intents = discord.Intents(4194303)
