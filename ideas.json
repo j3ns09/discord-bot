@@ -1,0 +1,14 @@
+{
+    "important": {
+        "commands" : [
+            "Join",
+            "Play",
+            "Mute/Unmute"
+        ]
+    },
+
+    "useless": [
+        "Muting/Lowering volume when over a specific range in vc",
+        "Answer meme pas un peu"
+    ]
+}
