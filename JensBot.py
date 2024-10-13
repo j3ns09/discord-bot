@@ -25,6 +25,12 @@ Le bot répond aux messages contenant "juif" et "arabe"
 async def on_ready():
     print(f"{bot.user.name} is connected and ready !")
 
+    for guild in bot.guilds:
+        for channel in guild.text_channels:
+            if str(channel) == "test-bot":
+                await channel.send("bot connecté")
+                await channel.send("https://tenor.com/view/the-deep-the-boys-gif-26305579")
+
 # === MUSIC ===
 
 @bot.command(help="Permet au bot de rejoindre un chat vocal.")
@@ -73,4 +79,8 @@ async def on_message(message: discord.Message) -> None:
 
     await bot.process_commands(message)
 
-bot.run(TOKEN)
+
+try:
+    bot.run(TOKEN)
+except discord.errors.DiscordException:
+    pass
