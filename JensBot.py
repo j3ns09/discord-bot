@@ -1,18 +1,22 @@
 import os
 import discord
 from discord.ext import commands
+from random import randint
 
 
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv("t.env")
 
 TOKEN : str = os.getenv("DISCORD_TOKEN")
 GUILD : discord.Guild = os.getenv("DISCORD_GUILD")
 
+PREFIX = "flih_"
+
+
 intents = discord.Intents(4194303)
 
-bot : commands.Bot = commands.Bot(command_prefix="flih_", intents=intents)
+bot : commands.Bot = commands.Bot(command_prefix=PREFIX, intents=intents)
 
 '''
 Le bot peut effectuer ces commandes spéciales avec le préfixe flih_
@@ -28,8 +32,7 @@ async def on_ready():
     for guild in bot.guilds:
         for channel in guild.text_channels:
             if str(channel) == "test-bot":
-                await channel.send("bot connecté")
-                await channel.send("https://tenor.com/view/the-deep-the-boys-gif-26305579")
+                await channel.send("bot connecté\nhttps://tenor.com/view/the-deep-the-boys-gif-26305579")
 
 # === MUSIC ===
 
@@ -50,7 +53,21 @@ async def joue(ctx):
     else:
         await ctx.send("tu dois être en voc pour m'appeler connard")
 
+@bot.command(help="Pour terminer les débats -- Chiffre aléatoire entre 0 et le chiffre spécifié")
+async def roll(ctx):
+    command_name = "roll"
 
+    text : str = ctx.message.content
+    ptr : int = len(PREFIX) + len(command_name) + 1
+    try:
+        max_num = int(text[ptr:-1])
+        x = randint(0, max_num)
+        await ctx.send(x)
+    except ValueError:
+        await ctx.send("Envoie une commande correcte stp")
+
+
+    
 
 
 # === USELESS ===
