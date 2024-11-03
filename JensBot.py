@@ -1,8 +1,9 @@
 import os
+import asyncio
 import discord
 from discord.ext import commands
 from random import randint, choice
-
+import yt_dlp as youtube_dl
 
 from dotenv import load_dotenv
 
@@ -14,7 +15,7 @@ GUILD : discord.Guild = os.getenv("DISCORD_GUILD")
 PREFIX = "_flih "
 
 
-intents = discord.Intents(4194303)
+intents = discord.Intents.all()
 
 bot : commands.Bot = commands.Bot(command_prefix=PREFIX, intents=intents)
 
@@ -37,6 +38,48 @@ async def on_ready():
 
 # === MUSIC ===
 
+# Options pour youtube-dl
+youtube_dl.utils.bug_reports_message = lambda: ''
+ytdl_format_options = {
+    'format': 'bestaudio/best',
+    'outtmpl': '%(extractor)s-%(id)s-%(title)s.%(ext)s',
+    'restrictfilenames': True,
+    'noplaylist': True,
+    'nocheckcertificate': True,
+    'ignoreerrors': False,
+    'quiet': True,
+    'no_warnings': True,
+    'default_search': 'auto',
+    'source_address': '0.0.0.0'
+}
+
+ffmpeg_options = {
+    'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
+    'options': '-vn'
+}
+
+ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
+
+class YTDLSource(discord.PCMVolumeTransformer):
+    def __init__(self, source, *, data, volume=0.35):
+        super().__init__(source, volume=volume)
+        self.data = data
+        self.title = data.get('title')
+        self.url = data.get('url')
+
+    @classmethod
+    async def from_url(cls, url, *, loop=None, stream=False):
+        loop = loop or asyncio.get_event_loop()
+        data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=False))
+
+        if 'entries' in data:
+            data = data['entries'][0]
+        
+        filename = data['url'] if stream else ytdl.prepare_filename(data)
+        audio_source = discord.FFmpegPCMAudio(filename, **ffmpeg_options)
+        return cls(audio_source, data=data)
+
+
 @bot.command(help="Permet au bot de rejoindre un chat vocal.")
 async def viens(ctx):
     if ctx.author.voice:
@@ -46,17 +89,27 @@ async def viens(ctx):
         await ctx.send("tu dois être en voc pour m'appeler connard")
 
 @bot.command(help="Permet de jouer une musique dans un chat vocal")
-async def joue(ctx):
+async def joue(ctx, url):
     if ctx.author.voice:
-        channel = ctx.author.voice.channel
-        await channel.connect()
-        #TODO make the acual thing
+        if not ctx.voice_client:
+            channel = ctx.author.voice.channel
+            await channel.connect()
+        async with ctx.typing():
+            player = await YTDLSource.from_url(url, loop=bot.loop, stream=True)
+            ctx.voice_client.play(player, after=lambda e: print(f'Erreur: {e}') if e else None)
+        await ctx.send(f"Playing {player.title}") 
     else:
         await ctx.send("tu dois être en voc pour m'appeler connard")
 
+@bot.command(help="Fait quitter le bot du chat vocal")
+async def sors(ctx):
+    if ctx.voice_client:
+        await ctx.guild.voice_client.disconnect()
 
-
-    
+@bot.command(help="Arrête de jouer la musique en cours")
+async def stop(ctx):
+    if ctx.voice_client:
+        ctx.voice_client.stop()
 
 
 # === USELESS ===
@@ -134,7 +187,8 @@ async def insulte(ctx):
     
     await ctx.send(f"{user} {insulte}")
 
-try:
-    bot.run(TOKEN)
-except discord.errors.DiscordException:
-    pass
+if __name__ == "__main__":
+    try:
+        bot.run(TOKEN)
+    except discord.errors.DiscordException:
+        pass
