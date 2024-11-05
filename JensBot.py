@@ -12,7 +12,7 @@ load_dotenv("t.env")
 TOKEN : str = os.getenv("DISCORD_TOKEN")
 GUILD : discord.Guild = os.getenv("DISCORD_GUILD")
 
-PREFIX = "_flih "
+PREFIX = "&lex "
 
 
 intents = discord.Intents.all()
@@ -55,7 +55,7 @@ ytdl_format_options = {
 
 ffmpeg_options = {
     'before_options': '-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
-    'options': '-vn'
+    'options': '-vn' # --lazy-playlist
 }
 
 ytdl = youtube_dl.YoutubeDL(ytdl_format_options)
@@ -68,17 +68,22 @@ class YTDLSource(discord.PCMVolumeTransformer):
         self.url = data.get('url')
 
     @classmethod
-    async def from_url(cls, url, *, loop=None, stream=False):
+    async def from_url(cls, url: str, *, loop=None, stream=False):
         loop = loop or asyncio.get_event_loop()
         data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=False))
+        
+        if url.startswith("https://www.youtube.com/playlist"):
+            stream = True
 
         if 'entries' in data:
-            data = data['entries'][0]
-        
+            data = data["entries"][0]
+
         filename = data['url'] if stream else ytdl.prepare_filename(data)
         audio_source = discord.FFmpegPCMAudio(filename, **ffmpeg_options)
         return cls(audio_source, data=data)
 
+
+queue = []
 
 @bot.command(help="Permet au bot de rejoindre un chat vocal.")
 async def viens(ctx):
@@ -89,7 +94,7 @@ async def viens(ctx):
         await ctx.send("tu dois être en voc pour m'appeler connard")
 
 @bot.command(help="Permet de jouer une musique dans un chat vocal")
-async def joue(ctx, url):
+async def joue_url(ctx, url):
     if ctx.author.voice:
         if not ctx.voice_client:
             channel = ctx.author.voice.channel
@@ -97,9 +102,56 @@ async def joue(ctx, url):
         async with ctx.typing():
             player = await YTDLSource.from_url(url, loop=bot.loop, stream=True)
             ctx.voice_client.play(player, after=lambda e: print(f'Erreur: {e}') if e else None)
+            
         await ctx.send(f"Playing {player.title}") 
     else:
         await ctx.send("tu dois être en voc pour m'appeler connard")
+
+@bot.command(help="Permet de jouer une musique dans un chat vocal en entrant le titre")
+async def joue_search(ctx, *title):
+    ydl_opts = {
+        'quiet': True,  # Suppress output messages
+        'extract_flat': True,  # Only extract metadata
+    }
+    
+    query = " ".join(title)
+    
+    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+        result = ydl.extract_info(f"ytsearch1:{query}", download=False)
+
+    if result["entries"] == []:
+        await ctx.send("Résultats non trouvés")
+
+    await joue_url(ctx, result["entries"][0]["url"])
+
+
+def play_next(ctx):
+    if queue:  # Vérifie si la file d'attente n'est pas vide
+        next_song = queue.pop(0)  # Récupère le prochain morceau
+        ctx.voice_client.play(next_song, after=lambda e: play_next(ctx))
+    else:
+        asyncio.run_coroutine_threadsafe(ctx.voice_client.disconnect(), bot.loop)
+    
+
+@bot.command(help="Permet de jouer une musique dans un chat vocal")
+async def joue_playlist(ctx, url):
+    if ctx.author.voice:
+        if not ctx.voice_client:
+            channel = ctx.author.voice.channel
+            await channel.connect()
+        async with ctx.typing():
+            try:
+                songs = await YTDLSource.from_url(url, loop=bot.loop, stream=True)
+                for song in songs:
+                    queue.append(song)
+                
+                if not ctx.voice_client.is_playing():
+                    play_next(ctx)
+                    
+                await ctx.send(f"Ajouté {len(songs)} chanson(s) à la file d'attente.")
+            except Exception as e:
+                await ctx.send("Une erreur est survenue lors de la lecture de la musique.")
+                print(f'Erreur lors de la lecture de la musique : {e}')
 
 @bot.command(help="Fait quitter le bot du chat vocal")
 async def sors(ctx):
@@ -139,16 +191,14 @@ async def on_message(message: discord.Message) -> None:
     await bot.process_commands(message)
 
 @bot.command(help="Pour terminer les débats -- Chiffre aléatoire entre 0 et le chiffre spécifié")
-async def roll(ctx):
+async def roll(ctx, num: str):
     command_name = "roll"
 
-    text : str = ctx.message.content
-    ptr : int = len(PREFIX) + len(command_name)
-    try:
-        max_num = int(text[ptr:])
+    if num.isdigit():
+        max_num = int(num)
         x = randint(0, max_num)
         await ctx.send(x)
-    except ValueError:
+    else:
         await ctx.send("Envoie une commande correcte stp")
 
 @bot.command(help="Envoie un meme aléatoire")
@@ -167,12 +217,7 @@ async def meme(ctx):
     await ctx.send(img_source)
 
 @bot.command(help="Insulte le ping")
-async def insulte(ctx):
-    command_name = "insulte"
-    text = ctx.message.content
-    ptr = len(PREFIX) + len(command_name)
-    user = text[ptr:]
-    
+async def insulte(ctx, user):
     import json
     
     with open("insultes.json", "r", encoding="UTF-8") as file:
@@ -188,7 +233,4 @@ async def insulte(ctx):
     await ctx.send(f"{user} {insulte}")
 
 if __name__ == "__main__":
-    try:
-        bot.run(TOKEN)
-    except discord.errors.DiscordException:
-        pass
+    bot.run(TOKEN)
