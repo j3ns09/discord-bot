@@ -28,6 +28,11 @@ class YTDLSource(discord.PCMVolumeTransformer):
         self.data = data
         self.title = data.get('title')
         self.url = data.get('url')
+    
+    ydl_opts = {
+            'quiet': True,  # Suppress output messages
+            'extract_flat': True,  # Only extract metadata
+        }
 
     @classmethod
     async def from_url(cls, url, *, loop=None, stream=False):

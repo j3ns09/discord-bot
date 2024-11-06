@@ -8,6 +8,10 @@ class Events(commands.Cog):
     @commands.Cog.listener()
     async def on_ready(self):
         print(f"{self.bot.user.name} is connected and ready!")
+        for guild in self.bot.guilds:
+            for channel in guild.text_channels:
+                if str(channel) == "test-bot":
+                    await channel.send("bot connecté")
 
     @commands.Cog.listener()
     async def on_message(self, message):
