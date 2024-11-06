@@ -17,7 +17,7 @@ class Music(commands.Cog):
             await ctx.send("Tu dois être en voc pour m'appeler.")
 
     @commands.command(help="Permet de jouer une musique dans un chat vocal en précisant l'url")
-    async def joue_url(self, ctx, url):
+    async def play_url(self, ctx, url):
         if ctx.author.voice:
             if not ctx.voice_client:
                 await ctx.author.voice.channel.connect()
@@ -30,26 +30,38 @@ class Music(commands.Cog):
 
 
     @commands.command(help="Permet de jouer une musique dans un chat vocal en précisant le titre")
-    async def joue_search(self, ctx, *title):
+    async def play_search(self, ctx, *, title):
         ydl_opts = {
             'quiet': True,  # Suppress output messages
             'extract_flat': True,  # Only extract metadata
         }
 
-        query = " ".join(title)
-
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-            result : dict = ydl.extract_info(f"ytsearch1:{query}", download=False)
+            result : dict = ydl.extract_info(f"ytsearch1:{title}", download=False)
 
         if result["entries"] == []:
             await ctx.send("Résultats non trouvés")
 
-        await self.joue_url(ctx, result["entries"][0]["url"])
+        await self.play_url(ctx, result["entries"][0]["url"])
 
     @commands.command(help="Fait quitter le bot du chat vocal")
     async def sors(self, ctx):
         if ctx.voice_client:
             await ctx.guild.voice_client.disconnect()
+
+    @commands.command(help="Permet d'envoyer le bot jouer une musique à quelqu'un d'un autre salon vocal")
+    async def gift(self, ctx, channel, *, url):
+        for guild in self.bot.guilds:
+            for chan in guild.channels:
+                if channel == chan.name and isinstance(chan, discord.VoiceChannel):
+                    if len(chan.members) > 0:
+                        users = chan.members
+                        await chan.connect()
+                        await self.play_url(ctx, url)
+
+                    else:
+                        await ctx.send(f"Il n'y a personne dans le chat vocal {chan.name}")
+                        return
 
 async def setup(bot):
     await bot.add_cog(Music(bot))
