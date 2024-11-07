@@ -1,3 +1,4 @@
 t.env
 test.py
 data_content.json
+__pycache__
