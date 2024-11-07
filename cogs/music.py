@@ -10,7 +10,7 @@ class Music(commands.Cog):
         self.queue = []
 
     @commands.command(help="Permet au bot de rejoindre un chat vocal.")
-    async def viens(self, ctx):
+    async def join(self, ctx):
         if ctx.author.voice:
             await ctx.author.voice.channel.connect()
         else:
@@ -30,7 +30,7 @@ class Music(commands.Cog):
 
 
     @commands.command(help="Permet de jouer une musique dans un chat vocal en précisant le titre")
-    async def play_search(self, ctx, *, title):
+    async def play_search(self, ctx, *title):
         ydl_opts = {
             'quiet': True,  # Suppress output messages
             'extract_flat': True,  # Only extract metadata
@@ -63,10 +63,10 @@ class Music(commands.Cog):
                     if len(chan.members) > 0:
                         users = chan.members
                         await chan.connect()
-                        await self.add_to_playlist(ctx, url)
+                        await self.play_url(ctx, url)
 
                     else:
-                        await ctx.send(f"Il n'y a personne dans le chat vocal {chan.name}")    
+                        await ctx.send(f"Il n'y a personne dans le chat vocal {chan.name}")
                         return
 
 async def setup(bot):
