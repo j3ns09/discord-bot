@@ -1,4 +1,5 @@
 import discord
+import asyncio
 from discord.ext import commands
 from utils.youtube import YTDLSource
 import yt_dlp as youtube_dl
@@ -7,7 +8,58 @@ import yt_dlp as youtube_dl
 class Music(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
-        self.queue = []
+        self.link_queue = []
+
+
+    async def get_playlist_content(self, ctx, url):
+        videos = await YTDLSource.from_url(url)
+        self.link_queue.extend(videos)
+
+
+    async def add_to_queue(self, ctx, query):
+        if query.startswith("https"):
+            self.link_queue.append(query)
+        else:
+            
+            ydl_opts = {
+                'quiet': True,  # Suppress output messages
+                'extract_flat': True,  # Only extract metadata
+            }
+
+            with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+                result : dict = ydl.extract_info(f"ytsearch1:{query}", download=False)
+
+            if result["entries"] == []:
+                await ctx.send("Résultats non trouvés")
+
+            self.link_queue.append(result["entries"][0]["url"])
+            # Si rien n'est en lecture, commencer immédiatement
+
+        await ctx.send("Lien youtube ajouté à la file d'attente")
+
+
+        if not ctx.voice_client.is_playing():
+            await self.play_next(ctx)
+
+    async def play_next(self, ctx):
+        if len(self.link_queue) > 0:
+            next_video = self.link_queue.pop(0)
+            async with ctx.typing():
+                player = await YTDLSource.video(next_video, stream=True)
+                ctx.voice_client.play(player, after=lambda e: print(e) if e else self.bot.loop.create_task(self.play_next(ctx)))
+                await ctx.send(f"Lecture en cours de: {player.title}")
+        else:
+            await ctx.send("La playlist est vide.")
+
+
+    @commands.command(help="Permet de visualiser la file d'attente")
+    async def queue(self, ctx):
+        nb_queue = len(self.link_queue)
+        if nb_queue > 0:
+            for i in range(len(self.link_queue)):
+                await ctx.send(f"{i} : {self.link_queue[i]}")
+        else:
+            await ctx.send("La file d'attente est vide.")
 
     @commands.command(help="Permet au bot de rejoindre un chat vocal.")
     async def join(self, ctx):
@@ -16,33 +68,20 @@ class Music(commands.Cog):
         else:
             await ctx.send("Tu dois être en voc pour m'appeler.")
 
-    @commands.command(help="Permet de jouer une musique dans un chat vocal en précisant l'url")
-    async def play_url(self, ctx, url):
+
+    @commands.command(help="Permet de jouer une musique")
+    async def play(self, ctx, *, query : str):
         if ctx.author.voice:
             if not ctx.voice_client:
                 await ctx.author.voice.channel.connect()
-            async with ctx.typing():
-                player = await YTDLSource.from_url(url, loop=self.bot.loop, stream=True)
-                ctx.voice_client.play(player, after=lambda e: print(f'Erreur: {e}') if e else None)
-            await ctx.send(f"Playing {player.title}")
-        else:
-            await ctx.send("Tu dois être en voc pour m'appeler")
 
+            await self.add_to_queue(ctx, query)
 
-    @commands.command(help="Permet de jouer une musique dans un chat vocal en précisant le titre")
-    async def play_search(self, ctx, *title):
-        ydl_opts = {
-            'quiet': True,  # Suppress output messages
-            'extract_flat': True,  # Only extract metadata
-        }
+    @commands.command(help="Permet de couper court à la musique en cours et de passer à la suivante")
+    async def skip(self, ctx):
+        await self.stop(ctx)
+        await self.play_next(ctx)
 
-        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-            result : dict = ydl.extract_info(f"ytsearch1:{title}", download=False)
-
-        if result["entries"] == []:
-            await ctx.send("Résultats non trouvés")
-
-        await self.play_url(ctx, result["entries"][0]["url"])
 
     @commands.command(help="Fait quitter le bot du chat vocal")
     async def sors(self, ctx):
@@ -68,6 +107,37 @@ class Music(commands.Cog):
                     else:
                         await ctx.send(f"Il n'y a personne dans le chat vocal {chan.name}")
                         return
+
+# DEPRECATED
+
+    # @commands.command(help="Permet de jouer une musique dans un chat vocal en précisant l'url")
+    # async def play_url(self, ctx, url: str):
+    #     if ctx.author.voice.channel:
+    #         vc = await ctx.author.voice.channel.connect()
+    #         print(f"bot connected to channel {ctx.author.voice.channel}")
+
+    #         async with ctx.typing():
+    #             player = await YTDLSource.video(url, stream=True)
+    #             vc.play(player, after=lambda e: print(f'Player error: {e}') if e else None)
+    #             await ctx.send(f"Playing {player.title}")
+    #     else:
+    #         await ctx.send("Tu dois être en voc pour m'appeler")
+
+
+    # @commands.command(help="Permet de jouer une musique dans un chat vocal en précisant le titre")
+    # async def play_search(self, ctx, *title):
+    #     ydl_opts = {
+    #         'quiet': True,  # Suppress output messages
+    #         'extract_flat': True,  # Only extract metadata
+    #     }
+
+    #     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+    #         result : dict = ydl.extract_info(f"ytsearch1:{title}", download=False)
+
+    #     if result["entries"] == []:
+    #         await ctx.send("Résultats non trouvés")
+
+    #     await self.play_url(ctx, result["entries"][0]["url"])
 
 async def setup(bot):
     await bot.add_cog(Music(bot))

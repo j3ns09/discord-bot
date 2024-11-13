@@ -1,8 +1,6 @@
 {
     "important": {
         "commands" : [
-            "Join",
-            "Play",
             "Mute/Unmute"
         ]
     },
