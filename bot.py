@@ -4,7 +4,7 @@ import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 
-from config import PREFIX, TOKEN, intents
+from config.config import PREFIX, TOKEN, intents
 
 
 load_dotenv("t.env")
