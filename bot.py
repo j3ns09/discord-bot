@@ -17,9 +17,11 @@ async def load_extensions():
     await bot.load_extension("cogs.music")
 
 async def init():
-    async with bot:
-        await load_extensions()
-        await bot.start(TOKEN)
+    await load_extensions()
 
 if __name__ == "__main__":
     asyncio.run(init())
+    try:
+        bot.run(TOKEN)
+    except KeyboardInterrupt:
+        bot.close()

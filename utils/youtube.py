@@ -30,14 +30,36 @@ class YTDLSource(discord.PCMVolumeTransformer):
         self.url = data.get('url')
 
     @classmethod
-    async def playlist(cls, url, *, loop=None, stream=False):
-        loop = loop or asyncio.get_event_loop()
-        data = await loop.run_in_executor(None, lambda: ytdl.extract_info(url, download=False))
+    async def playlist(cls, url):
         videos = []
-        for entry in data["entries"]:
-            filename = entry['url'] if stream else ytdl.prepare_filename(entry)
-            videos.append(cls(discord.FFmpegPCMAudio(filename, **ffmpeg_options), data=data))
+        ydl_opts = {
+            'quiet': True,  # Suppress output messages
+            'extract_flat': True,  # Only extract metadata
+        }
+
+        # Create a YDL context with options
+        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+                result = ydl.extract_info(f"{url}", download=False)
+
+        for entry in result["entries"]:
+            videos.append(entry["url"])
+
         return videos
+    
+    @classmethod
+    async def get_video_url(cls, url):
+        ydl_opts = {
+                'quiet': True,  # Suppress output messages
+                'extract_flat': True,  # Only extract metadata
+            }
+
+        with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+            result : dict = ydl.extract_info(f"ytsearch1:{url}", download=False)
+
+        if result["entries"] == []:
+            return 1
+
+        return result["entries"][0]["url"]
 
     @classmethod
     async def video(cls, url, *, loop=None, stream=False):
