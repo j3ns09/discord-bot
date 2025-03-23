@@ -1,10 +1,12 @@
-import os
 import asyncio
-import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 
 from config.config import PREFIX, TOKEN, intents
+
+from cogs.events import Events
+from cogs.fun import Fun
+from cogs.music import Music
 
 
 load_dotenv("t.env")
@@ -12,9 +14,9 @@ load_dotenv("t.env")
 bot = commands.Bot(command_prefix=PREFIX, intents=intents)
 
 async def load_extensions():
-    await bot.load_extension("cogs.fun")
-    await bot.load_extension("cogs.events")
-    await bot.load_extension("cogs.music")
+    await bot.add_cog(Events(bot))
+    await bot.add_cog(Fun(bot))
+    await bot.add_cog(Music(bot))
 
 async def init():
     await load_extensions()

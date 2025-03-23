@@ -1,4 +1,3 @@
-import discord
 from discord.ext import commands
 from random import randint
 from utils.insults import get_random_insult
@@ -8,7 +7,7 @@ class Fun(commands.Cog):
         self.bot = bot
 
     @commands.command(help="Pour terminer les débats -- Chiffre aléatoire entre 0 et le chiffre spécifié")
-    async def roll(self, ctx, num: str):
+    async def roll(self, ctx, num: str = 10):
         if num.isdigit():
             await ctx.send(randint(0, int(num)))
         else:
@@ -18,6 +17,3 @@ class Fun(commands.Cog):
     async def insulte(self, ctx, user):
         insult = get_random_insult()
         await ctx.send(f"{user} {insult}")
-
-async def setup(bot):
-    await bot.add_cog(Fun(bot))

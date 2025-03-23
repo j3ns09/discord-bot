@@ -89,7 +89,8 @@ class Music(commands.Cog):
 
 
     @commands.command(help="Permet de jouer une musique")
-    async def play(self, ctx, *, query : str):
+    async def play(self, ctx, query : str, *, standalone=False):
+        print("Requesting a music to be played")
         if ctx.author.voice:
             if not ctx.voice_client:
                 await ctx.author.voice.channel.connect()
@@ -117,15 +118,15 @@ class Music(commands.Cog):
 
     @commands.command(help="Fait quitter le bot du chat vocal")
     async def sors(self, ctx):
-        if ctx.voice_client:
+        if ctx.voice_client and ctx.voice_client.is_playing():
             await self.stop(ctx)
-            self.bot.loop.stop()
-            self.link_queue.clear()
-            await ctx.guild.voice_client.disconnect()
+        self.bot.loop.stop()
+        self.link_queue.clear()
+        await ctx.guild.voice_client.disconnect()
 
     @commands.command(help="Arrête de jouer la musique en cours")
     async def stop(self, ctx):
-        if ctx.voice_client:
+        if ctx.voice_client.is_playing():
             ctx.voice_client.stop()
             await ctx.send("Arrêt de l'audio en cours de lecture")
 
@@ -173,6 +174,3 @@ class Music(commands.Cog):
     #         await ctx.send("Résultats non trouvés")
 
     #     await self.play_url(ctx, result["entries"][0]["url"])
-
-async def setup(bot):
-    await bot.add_cog(Music(bot))

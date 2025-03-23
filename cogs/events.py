@@ -1,4 +1,3 @@
-import discord
 from discord.ext import commands
 
 class Events(commands.Cog):
@@ -30,8 +29,3 @@ class Events(commands.Cog):
                 await self.bot.logout()
             except:
                 self.bot.clear()
-
-        await self.bot.process_commands(message)
-
-async def setup(bot):
-    await bot.add_cog(Events(bot))
