@@ -19,9 +19,12 @@ async def load_extensions():
 async def init():
     await load_extensions()
 
+async def close():
+    await bot.close()
+
 if __name__ == "__main__":
     asyncio.run(init())
     try:
         bot.run(TOKEN)
     except KeyboardInterrupt:
-        bot.close()
+        asyncio.run(bot.close())

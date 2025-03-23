@@ -9,8 +9,10 @@ class Music(commands.Cog):
     def __init__(self, bot):
         self.bot : commands.Bot = bot
         self.link_queue : list[str] = []
+        self.ready_queue : list[YTDLSource] = []
+        self.n_song : int = 0
 
-    async def add_to_queue(self, ctx, query):
+    async def get_query(query: str):
         batch = []
         if query.startswith("https"):
             if "playlist" in query:
@@ -20,29 +22,50 @@ class Music(commands.Cog):
                 batch.append(query)
         else:
             url = await YTDLSource.get_video_url(query)
-            
-            if url == 1:
+
+            if not url:
+                return 0
                 await ctx.send("Musique non trouvée")
-                return
-            
+
             batch.append(url)
-            # Si rien n'est en lecture, commencer immédiatement
+        return batch
 
-        self.link_queue.extend(batch)
+    async def add_to_queue(self, ctx, query: str):
+        batch = await Music.get_query(query)
 
-        await ctx.send("Playlist ajoutée à la file d'attente") if len(batch) > 1 else await ctx.send("Lien youtube ajouté à la file d'attente")
+        if batch:
+            self.link_queue.extend(batch)
+            await ctx.send("Playlist ajoutée à la file d'attente") if len(batch) > 1 else await ctx.send("Lien youtube ajouté à la file d'attente")
 
 
         if not ctx.voice_client.is_playing():
-            await self.play_next(ctx, 1)
+            await self.play_next(ctx)
 
-    async def play_next(self, ctx, i):
+    async def add_to_download(self, ctx, query):
+        batch = await Music.get_query(query)
+        players = []
+
+        if batch:
+            for link in batch:
+                await ctx.send(f"Getting video {query}")
+                player = await YTDLSource.video(link, stream=False)
+                await ctx.send(f"Downloaded video {query}")
+
+                players.append(player)
+
+        self.ready_queue.extend(players)
+
+    async def play_next(self, ctx):
         if len(self.link_queue) > 0:
             next_video = self.link_queue.pop(0)
+            self.n_song += 1
             async with ctx.typing():
+                if self.ready_queue:
+                    ctx.voice_client.play(self.ready_queue.pop(), after=lambda e: print(e) if e else self.bot.loop.create_task(self.play_next(ctx)))
+
                 player = await YTDLSource.video(next_video, stream=True)
-                ctx.voice_client.play(player, after=lambda e: print(e) if e else self.bot.loop.create_task(self.play_next(ctx, i+1)))
-                await ctx.send(f"musique {i} en cours de lecture")
+                ctx.voice_client.play(player, after=lambda e: print(e) if e else self.bot.loop.create_task(self.play_next(ctx)))
+                # await ctx.send(f"Musique {self.n_song} en cours de lecture")
                 await ctx.send(f"Lecture en cours de: {player.title}")
         else:
             await ctx.send("La playlist est vide.")
@@ -71,7 +94,20 @@ class Music(commands.Cog):
             if not ctx.voice_client:
                 await ctx.author.voice.channel.connect()
 
-            await self.add_to_queue(ctx, query)
+            options = {
+                '-dl' : '-dl'
+            }
+
+            if options["-dl"] in query:
+                await ctx.send("Option pour télécharger choisie")
+                dl_k = options["-dl"]
+                dl = query.find(dl_k)
+                query = query[dl + len(dl_k)]
+                await self.add_to_download(ctx, query)
+            else:
+                await self.add_to_queue(ctx, query)
+
+
 
     @commands.command(help="Permet de couper court à la musique en cours et de passer à la suivante")
     async def skip(self, ctx):
@@ -82,8 +118,8 @@ class Music(commands.Cog):
     @commands.command(help="Fait quitter le bot du chat vocal")
     async def sors(self, ctx):
         if ctx.voice_client:
-            await self.stop()
-            self.bot.loop.stop(ctx)
+            await self.stop(ctx)
+            self.bot.loop.stop()
             self.link_queue.clear()
             await ctx.guild.voice_client.disconnect()
 
@@ -94,14 +130,14 @@ class Music(commands.Cog):
             await ctx.send("Arrêt de l'audio en cours de lecture")
 
     @commands.command(help="Permet d'envoyer le bot jouer une musique à quelqu'un d'un autre salon vocal")
-    async def gift(self, ctx, channel, *, url):
+    async def gift(self, ctx, channel, *, query):
         for guild in self.bot.guilds:
             for chan in guild.channels:
                 if channel == chan.name and isinstance(chan, discord.VoiceChannel):
                     if len(chan.members) > 0:
                         users = chan.members
                         await chan.connect()
-                        await self.play_url(ctx, url)
+                        await self.play(ctx, query)
 
                     else:
                         await ctx.send(f"Il n'y a personne dans le chat vocal {chan.name}")
