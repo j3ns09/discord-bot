@@ -30,6 +30,11 @@ class Music(commands.Cog):
             batch.append(url)
         return batch
 
+    def clean_query(query: str):
+        if isinstance(query, tuple):
+            query = " ".join(query)
+        return query
+
     async def add_to_queue(self, ctx, query: str):
         batch = await Music.get_query(query)
 
@@ -89,7 +94,7 @@ class Music(commands.Cog):
 
 
     @commands.command(help="Permet de jouer une musique")
-    async def play(self, ctx, query : str, *, standalone=False):
+    async def play(self, ctx, *query : str, standalone=False):
         print("Requesting a music to be played")
         if ctx.author.voice:
             if not ctx.voice_client:
@@ -98,6 +103,8 @@ class Music(commands.Cog):
             options = {
                 '-dl' : '-dl'
             }
+            
+            query = Music.clean_query(query)
 
             if options["-dl"] in query:
                 await ctx.send("Option pour télécharger choisie")
