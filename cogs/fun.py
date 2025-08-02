@@ -17,3 +17,9 @@ class Fun(commands.Cog):
     async def insulte(self, ctx, user):
         insult = get_random_insult()
         await ctx.send(f"{user} {insult}")
+    
+    async def spam(self, ctx, person, number):
+        if number > 30:
+            await ctx.send("Le nombre de ping est trop grand.")
+        for i in range(number):
+            await ctx.send(f"{person}")

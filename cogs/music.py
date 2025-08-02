@@ -33,6 +33,7 @@ class Music(commands.Cog):
     def clean_query(query: str):
         if isinstance(query, tuple):
             query = " ".join(query)
+        print(f"Cleaned query is: {query}")
         return query
 
     async def add_to_queue(self, ctx, query: str):
@@ -96,6 +97,7 @@ class Music(commands.Cog):
     @commands.command(help="Permet de jouer une musique")
     async def play(self, ctx, *query : str, standalone=False):
         print("Requesting a music to be played")
+        print(f"Requesting {query}")
         if ctx.author.voice:
             if not ctx.voice_client:
                 await ctx.author.voice.channel.connect()
@@ -138,14 +140,14 @@ class Music(commands.Cog):
             await ctx.send("Arrêt de l'audio en cours de lecture")
 
     @commands.command(help="Permet d'envoyer le bot jouer une musique à quelqu'un d'un autre salon vocal")
-    async def gift(self, ctx, channel, *, query):
+    async def gift(self, ctx, channel, *query):
         for guild in self.bot.guilds:
             for chan in guild.channels:
                 if channel == chan.name and isinstance(chan, discord.VoiceChannel):
                     if len(chan.members) > 0:
                         users = chan.members
                         await chan.connect()
-                        await self.play(ctx, query)
+                        await self.play(ctx, *query)
 
                     else:
                         await ctx.send(f"Il n'y a personne dans le chat vocal {chan.name}")
