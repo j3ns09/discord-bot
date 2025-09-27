@@ -1,7 +1,9 @@
 import discord
 from discord.ext import commands, tasks
 from collections import defaultdict
+
 import time, json
+from datetime import date
 
 class Events(commands.Cog):
     def __init__(self, bot):
@@ -14,6 +16,7 @@ class Events(commands.Cog):
         self.ogss_role_id : int = 1135009307688177789
         self.troll_role_id : int = 1408007325716975648
 
+        self.counting_start = Events.current_date()
         self.message_counts = defaultdict(int)
         self.voice_durations = defaultdict(int)
 
@@ -28,6 +31,14 @@ class Events(commands.Cog):
         voice_coeff = 2.5
         return nb_messages * message_coeff + (voice_time / 60) * voice_coeff
 
+    # Get current date
+    @staticmethod
+    def current_date():
+        return date.fromtimestamp(time.time())
+
+    def get_counting_start(self):
+        return self.counting_start.strftime("%d/%m/%y")
+
     @commands.Cog.listener()
     async def on_ready(self):
         print(f"{self.bot.user.name} is connected and ready!")
@@ -38,6 +49,52 @@ class Events(commands.Cog):
         if not self.reset_stats.is_running():
             self.reset_stats.start()
 
+    @commands.command("trolleur", help="Le trolleur de la semaine à commencer du début du compte")
+    async def get_current_stats(self, ctx):
+        server = self.server
+
+        await ctx.send(f"📊 **Stats de la semaine à partir du {self.get_counting_start()} ** 📊")
+
+        if self.message_counts:
+            msg_lines = ["**Messages envoyés :**"]
+            for user_id, count in self.message_counts.items():
+                member = self.bot.get_guild(self.server).get_member(user_id)
+                username = member.display_name if member else f"Utilisateur inconnu ({user_id})"
+                msg_lines.append(f"- {username} : **{count} messages**")
+            await ctx.send("\n".join(msg_lines))
+        else:
+            await ctx.send("Aucun message pour cet intervalle de temps.")
+
+        if self.voice_durations:
+            voc_lines = ["**Temps passé en vocal :**"]
+            for user_id, seconds in self.voice_durations.items():
+                member = self.bot.get_guild(self.server).get_member(user_id)
+                username = member.display_name if member else f"Utilisateur inconnu ({user_id})"
+
+                hours, remainder = divmod(seconds, 3600)
+                minutes, _ = divmod(remainder, 60)
+                voc_lines.append(f"- {username} : **{hours}h {minutes}m**")
+            await ctx.send("\n".join(voc_lines))
+        else:
+            await ctx.send("Personne n'est allé en vocal pour cet intervalle de temps.")
+
+        if self.message_counts or self.voice_durations:
+            activity_scores = {}
+
+            for member in server.members:
+                if member.bot:
+                    continue
+                if not any(role.id == self.ogss_role_id for role in member.roles):
+                    continue
+                messages = self.message_counts.get(member.id, 0)
+                seconds = self.voice_durations.get(member.id, 0)
+                score = Events.score(messages, seconds)
+                activity_scores[member.id] = score
+
+            loser_id = min(activity_scores, key=activity_scores.get)
+            loser_member = server.get_member(loser_id)
+
+            await ctx.send(f"Le moins actif pour cet intervalle est **{loser_member.display_name}**")
 
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -82,9 +139,9 @@ class Events(commands.Cog):
             return
         
         server = self.bot.get_guild(self.server)
-        ogs_channel = self.bot.get_channel(self.test_channel_id)
+        ogs_channel = self.bot.get_channel(self.ogs_channel_id)
         
-        await ogs_channel.send("📊 **Stats de la semaine** 📊")
+        await ogs_channel.send(f"📊 **Stats de la semaine du {self.get_counting_start()}** 📊")
 
         if self.message_counts:
             msg_lines = ["**Messages envoyés :**"]
@@ -143,6 +200,7 @@ class Events(commands.Cog):
 
         self.message_counts.clear()
         self.voice_durations.clear()
+        self.counting_start = Events.current_date()
 
     @reset_stats.before_loop
     async def before_reset_stats(self):
