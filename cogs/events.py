@@ -36,6 +36,34 @@ class Events(commands.Cog):
     def current_date():
         return date.fromtimestamp(time.time())
 
+    @staticmethod
+    def user_was_muted(before, after):
+        return (before.deaf or before.mute or before.self_mute or before.self_deaf) and not (after.deaf or after.mute or after.self_mute or after.self_deaf)
+    
+    @staticmethod
+    def user_was_unmuted(before, after):
+        return not (before.deaf or before.mute or before.self_mute or before.self_deaf) and (after.deaf or after.mute or after.self_mute or after.self_deaf)
+
+    @staticmethod
+    def user_joined_voice(before, after):
+        return before.channel is None and after.channel is not None
+    
+    @staticmethod
+    def user_left_voice(before, after):
+        return before.channel is not None and after.channel is None
+
+
+
+    def start_counting_user(self, user):
+        self.voice_sessions[user.id] = time.time()
+
+    def stop_counting_user(self, user):
+        m_id = user.id
+        if m_id in self.voice_sessions:
+            duration = int(time.time() - self.voice_sessions[m_id])
+            self.voice_durations[m_id] += duration
+            del self.voice_sessions[m_id]
+
     def get_counting_start(self):
         return self.counting_start.strftime("%d/%m/%y")
 
@@ -49,7 +77,7 @@ class Events(commands.Cog):
         if not self.reset_stats.is_running():
             self.reset_stats.start()
 
-    @commands.command("trolleur", help="Le trolleur de la semaine à commencer du début du compte")
+    @commands.command("trolleur", help="Le trolleur de la semaine à commencer du début du décompte")
     async def get_current_stats(self, ctx):
         server = self.server
 
@@ -121,14 +149,14 @@ class Events(commands.Cog):
     async def on_voice_state_update(self, member, before, after):
         if not any(role.id == self.ogss_role_id for role in member.roles):
             return
-        if before.channel is None and after.channel is not None:
-            self.voice_sessions[member.id] = time.time()
-        elif before.channel is not None and after.channel is None:
-            m_id = member.id
-            if m_id in self.voice_sessions:
-                duration = int(time.time() - self.voice_sessions[m_id])
-                self.voice_durations[m_id] += duration
-                del self.voice_sessions[m_id]
+        if Events.user_joined_voice(before, after):
+            self.start_counting_user(member)
+        elif Events.user_left_voice(before, after):
+            self.stop_counting_user(member)
+        elif Events.user_was_muted(before, after):
+            self.start_counting_user(member)
+        elif Events.user_was_unmuted(before, after):
+            self.stop_counting_user(member)
 
     @tasks.loop(hours=168)
     async def reset_stats(self):
