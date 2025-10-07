@@ -5,22 +5,24 @@ from collections import defaultdict
 import time, json
 from datetime import date
 
+
 class Events(commands.Cog):
     def __init__(self, bot):
-        self.bot : commands.Bot = bot
-        
-        self.server : int = 458935607373332480
-        self.test_channel_id : int = 1295153171081072720
-        self.ogs_channel_id : int = 1120761434045939822
+        self.bot: commands.Bot = bot
 
-        self.ogss_role_id : int = 1135009307688177789
-        self.troll_role_id : int = 1408007325716975648
+        self.server: int = 458935607373332480
+        self.test_channel_id: int = 1295153171081072720
+        self.ogs_channel_id: int = 1120761434045939822
+
+        self.ogss_role_id: int = 1135009307688177789
+        self.troll_role_id: int = 1408007325716975648
+        self.puant_role_id: int = 1424824759027499130
 
         self.counting_start = Events.current_date()
         self.message_counts = defaultdict(int)
         self.voice_durations = defaultdict(int)
 
-        self.voice_sessions : dict = {}
+        self.voice_sessions: dict = {}
 
         self.first_run = True
 
@@ -77,17 +79,25 @@ class Events(commands.Cog):
         if not self.reset_stats.is_running():
             self.reset_stats.start()
 
-    @commands.command("trolleur", help="Le trolleur de la semaine à commencer du début du décompte")
+    @commands.command(
+        "trolleur", help="Le trolleur de la semaine à commencer du début du compte"
+    )
     async def get_current_stats(self, ctx):
-        server = self.server
+        server = self.bot.get_guild(self.server)
 
-        await ctx.send(f"📊 **Stats de la semaine à partir du {self.get_counting_start()} ** 📊")
+        await ctx.send(
+            f"📊 **Stats de la semaine à partir du {self.get_counting_start()} ** 📊"
+        )
 
         if self.message_counts:
             msg_lines = ["**Messages envoyés :**"]
             for user_id, count in self.message_counts.items():
-                member = self.bot.get_guild(self.server).get_member(user_id)
-                username = member.display_name if member else f"Utilisateur inconnu ({user_id})"
+                member = server.get_member(user_id)
+                username = (
+                    member.display_name
+                    if member
+                    else f"Utilisateur inconnu ({user_id})"
+                )
                 msg_lines.append(f"- {username} : **{count} messages**")
             await ctx.send("\n".join(msg_lines))
         else:
@@ -96,8 +106,12 @@ class Events(commands.Cog):
         if self.voice_durations:
             voc_lines = ["**Temps passé en vocal :**"]
             for user_id, seconds in self.voice_durations.items():
-                member = self.bot.get_guild(self.server).get_member(user_id)
-                username = member.display_name if member else f"Utilisateur inconnu ({user_id})"
+                member = server.get_member(user_id)
+                username = (
+                    member.display_name
+                    if member
+                    else f"Utilisateur inconnu ({user_id})"
+                )
 
                 hours, remainder = divmod(seconds, 3600)
                 minutes, _ = divmod(remainder, 60)
@@ -122,26 +136,30 @@ class Events(commands.Cog):
             loser_id = min(activity_scores, key=activity_scores.get)
             loser_member = server.get_member(loser_id)
 
-            await ctx.send(f"Le moins actif pour cet intervalle est **{loser_member.display_name}**")
+            await ctx.send(
+                f"Le moins actif pour cet intervalle est **{loser_member.display_name}**"
+            )
 
     @commands.Cog.listener()
     async def on_message(self, message):
         if message.author == self.bot.user:
             return
 
-        if not any(role.id == self.ogss_role_id for role in message.author.roles): 
+        if not any(role.id == self.ogss_role_id for role in message.author.roles):
             return
-        
+
         self.message_counts[message.author.id] += 1
 
         if "juif" in message.content:
-            await message.channel.send("C'est moi qui vais te déporter si tu continues.")
+            await message.channel.send(
+                "C'est moi qui vais te déporter si tu continues."
+            )
         elif "arabe" in message.content:
             await message.channel.send("Toujours les mêmes.")
 
         if message.author.name.lower() == "jensn" and message.content == "bot --stop":
             try:
-                await self.bot.logout()
+                await self.bot.close()
             except:
                 self.bot.clear()
 
@@ -165,34 +183,44 @@ class Events(commands.Cog):
             self.message_counts.clear()
             self.voice_durations.clear()
             return
-        
+
         server = self.bot.get_guild(self.server)
         ogs_channel = self.bot.get_channel(self.ogs_channel_id)
-        
-        await ogs_channel.send(f"📊 **Stats de la semaine du {self.get_counting_start()}** 📊")
+
+        final_message = [
+            f"📊 **Stats de la semaine du {self.get_counting_start()}** 📊"
+        ]
 
         if self.message_counts:
-            msg_lines = ["**Messages envoyés :**"]
+            final_message.append("**Messages envoyés :**")
             for user_id, count in self.message_counts.items():
                 member = self.bot.get_guild(self.server).get_member(user_id)
-                username = member.display_name if member else f"Utilisateur inconnu ({user_id})"
-                msg_lines.append(f"- {username} : **{count} messages**")
-            await ogs_channel.send("\n".join(msg_lines))
+                username = (
+                    member.display_name
+                    if member
+                    else f"Utilisateur inconnu ({user_id})"
+                )
+                final_message.append(f"- {username} : **{count} messages**")
         else:
             await ogs_channel.send("Aucun message cette semaine.")
 
         if self.voice_durations:
-            voc_lines = ["**Temps passé en vocal :**"]
+            final_message.append("**Temps passé en vocal :**")
             for user_id, seconds in self.voice_durations.items():
                 member = self.bot.get_guild(self.server).get_member(user_id)
-                username = member.display_name if member else f"Utilisateur inconnu ({user_id})"
+                username = (
+                    member.display_name
+                    if member
+                    else f"Utilisateur inconnu ({user_id})"
+                )
 
                 hours, remainder = divmod(seconds, 3600)
                 minutes, _ = divmod(remainder, 60)
-                voc_lines.append(f"- {username} : **{hours}h {minutes}m**")
-            await ogs_channel.send("\n".join(voc_lines))
+                final_message.append(f"- {username} : **{hours}h {minutes}m**")
         else:
             await ogs_channel.send("Personne n'est allé en vocal cette semaine.")
+
+        await ogs_channel.send("\n".join(final_message))
 
         if self.message_counts or self.voice_durations:
             activity_scores = {}
@@ -211,13 +239,29 @@ class Events(commands.Cog):
             loser_member = server.get_member(loser_id)
             loser_role = server.get_role(self.troll_role_id)
 
+            winner_id = max(activity_scores, key=activity_scores.get)
+            winner_member = server.get_member(winner_id)
+            winner_role = server.get_role(self.puant_role_id)
+
             for m in server.members:
                 if loser_role in m.roles and m != loser_member:
                     await m.remove_roles(loser_role)
 
+            for m in server.members:
+                if winner_role in m.roles and m != winner_member:
+                    await m.remove_roles(winner_role)
+
             await loser_member.add_roles(loser_role)
-            await ogs_channel.send(f"🏆 Le moins actif cette semaine est **{loser_member.display_name}**, "
-                                f"il reçoit le rôle de {loser_role.mention} !")
+            await winner_member.add_roles(winner_role)
+
+            await ogs_channel.send(
+                f"🏆 Le moins actif cette semaine est **{loser_member.display_name}**, "
+                f"il reçoit le rôle de {loser_role.mention} !"
+            )
+            await ogs_channel.send(
+                f"🏆 Le plus actif cette semaine est **{winner_member.display_name}**, "
+                f"il reçoit le rôle de {winner_role.mention} !"
+            )
 
         # Sauvegarde dans un JSON
         # with open("stats.json", "w") as f:
