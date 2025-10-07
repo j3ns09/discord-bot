@@ -60,11 +60,10 @@ class Events(commands.Cog):
         self.voice_sessions[user.id] = time.time()
 
     def stop_counting_user(self, user):
-        m_id = user.id
-        if m_id in self.voice_sessions:
-            duration = int(time.time() - self.voice_sessions[m_id])
-            self.voice_durations[m_id] += duration
-            del self.voice_sessions[m_id]
+        start_time = self.voice_sessions.pop(user.id, None)
+        if start_time:
+            duration = int(time.time() - start_time)
+            self.voice_durations[user.id] += duration
 
     def get_counting_start(self):
         return self.counting_start.strftime("%d/%m/%y")
