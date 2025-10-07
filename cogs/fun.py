@@ -6,7 +6,8 @@ from utils.insults import get_random_insult
 
 class Fun(commands.Cog):
     def __init__(self, bot):
-        self.bot = bot
+        self.bot: commands.Bot = bot
+        self.server: int = 458935607373332480
 
     @commands.command(
         help="Pour terminer les débats -- Chiffre aléatoire entre 0 et le chiffre spécifié"
@@ -24,10 +25,13 @@ class Fun(commands.Cog):
 
     @commands.command(help="Spam ping")
     async def spam(self, ctx, person, number):
+        if self.bot.get_guild(self.server).get_member_named(person) is None:
+            return
         if number.isdigit():
             number = int(number)
-            if number > 30:
+            if number > 15:
                 await ctx.send("Le nombre de ping est trop grand.")
-        for i in range(number):
-            await ctx.send(f"{person}")
-            await sleep(1)
+                return
+            for _ in range(number):
+                await ctx.send(f"{person}")
+                await sleep(1)

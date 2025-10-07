@@ -40,21 +40,23 @@ class Events(commands.Cog):
 
     @staticmethod
     def user_was_muted(before, after):
-        return (before.deaf or before.mute or before.self_mute or before.self_deaf) and not (after.deaf or after.mute or after.self_mute or after.self_deaf)
-    
+        return (
+            before.deaf or before.mute or before.self_mute or before.self_deaf
+        ) and not (after.deaf or after.mute or after.self_mute or after.self_deaf)
+
     @staticmethod
     def user_was_unmuted(before, after):
-        return not (before.deaf or before.mute or before.self_mute or before.self_deaf) and (after.deaf or after.mute or after.self_mute or after.self_deaf)
+        return not (
+            before.deaf or before.mute or before.self_mute or before.self_deaf
+        ) and (after.deaf or after.mute or after.self_mute or after.self_deaf)
 
     @staticmethod
     def user_joined_voice(before, after):
         return before.channel is None and after.channel is not None
-    
+
     @staticmethod
     def user_left_voice(before, after):
         return before.channel is not None and after.channel is None
-
-
 
     def start_counting_user(self, user):
         self.voice_sessions[user.id] = time.time()
@@ -134,9 +136,11 @@ class Events(commands.Cog):
 
             loser_id = min(activity_scores, key=activity_scores.get)
             loser_member = server.get_member(loser_id)
+            winner_id = max(activity_scores, key=activity_scores.get)
+            winner_member = server.get_member(winner_id)
 
             await ctx.send(
-                f"Le moins actif pour cet intervalle est **{loser_member.display_name}**"
+                f"Le moins actif pour cet intervalle est **{loser_member.display_name}** et le plus actif est **{winner_member.display_name}**"
             )
 
     @commands.Cog.listener()
