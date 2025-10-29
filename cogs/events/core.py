@@ -1,26 +1,20 @@
 import discord
 from discord.ext import commands, tasks
-import logging
 
 from cogs.events.constants import *
 from cogs.events.tracking import Tracker
+from cogs.events.logger import Logger
 from cogs.events.scoring import score, current_date
 from cogs.events.reporting import format_message_stats, format_voice_stats
 
 
 class Events(commands.Cog):
-    def __init__(self, bot):
-        self.bot = bot
-        self.tracker = Tracker()
+    def __init__(self, bot: commands.Bot):
+        self.bot: commands.Bot = bot
+        self.tracker: Tracker = Tracker()
+        self.logger: Logger = Logger()
         self.start_date = current_date()
-        self.first_run = True
-
-        logging.basicConfig(
-            filename="voice_activity.log",
-            level=logging.INFO,
-            format="%(asctime)s - %(levelname)s - %(message)s",
-        )
-        logging.info("=== Voice tracking started ===")
+        self.first_run: bool = True
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -45,13 +39,15 @@ class Events(commands.Cog):
             return
         if before.channel is None and after.channel is not None:
             self.tracker.start_voice_session(member.id)
-            msg = f"{member.global_name} a rejoint le salon vocal {after.channel.name}"
-            logging.info(msg)
+            self.logger.write_entry(
+                f"{member.global_name} a rejoint le salon vocal {after.channel.name}"
+            )
 
         elif before.channel is not None and after.channel is None:
             self.tracker.stop_voice_session(member.id)
-            msg = f"{member.global_name} a quitté le salon vocal {before.channel.name}"
-            logging.info(msg)
+            self.logger.write_entry(
+                f"{member.global_name} a quitté le salon vocal {before.channel.name}"
+            )
 
     @commands.command(name="trolleur")
     async def show_weekly_stats(self, ctx):
@@ -123,6 +119,7 @@ class Events(commands.Cog):
         # Reset
         self.tracker.clear()
         self.start_date = current_date()
+        self.logger.clean()
 
     @reset_stats.before_loop
     async def before_reset_stats(self):

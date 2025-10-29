@@ -1,7 +1,7 @@
 from cogs.events.scoring import format_time
 
 
-def format_message_stats(message_counts, server):
+def format_message_stats(message_counts, server) -> list[str]:
     if not message_counts:
         return ["Aucun message pour cet intervalle de temps."]
     lines = ["**Messages envoyés :**"]
@@ -12,7 +12,7 @@ def format_message_stats(message_counts, server):
     return lines
 
 
-def format_voice_stats(voice_durations, server):
+def format_voice_stats(voice_durations, server) -> list[str]:
     if not voice_durations:
         return ["Personne n'est allé en vocal."]
     lines = ["**Temps passé en vocal :**"]

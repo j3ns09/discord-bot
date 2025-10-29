@@ -4,8 +4,8 @@ from collections import defaultdict
 
 class Tracker:
     def __init__(self):
-        self.message_counts = defaultdict(int)
-        self.voice_durations = defaultdict(int)
+        self.message_counts: defaultdict[int, int] = defaultdict(int)
+        self.voice_durations: defaultdict[int, int] = defaultdict(int)
         self.voice_sessions: dict[int, float] = {}
 
     def add_message(self, user_id: int):

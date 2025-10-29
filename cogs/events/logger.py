@@ -1,39 +1,35 @@
-from datetime import date, datetime
-import time
+import os
+from datetime import datetime
 
 
 class Logger:
-    def __init__(self, filename):
-        self.creation_time = datetime.now()
-        self.filename = filename
+    def __init__(self):
+        self.creation_time: datetime = datetime.now()
+        self.time_format: str = "%Y-%m-%d %H:%M:%S"
+
+        logs_dir = os.path.join("cogs", "events", "logs")
+        os.makedirs(logs_dir, exist_ok=True)
+        filename = f"trolleur_{self.creation_time.strftime('%Y-%m-%d')}.log"
+
+        self.filename: str = os.path.join(logs_dir, filename)
 
         with open(self.filename, "w", encoding="utf-8") as f:
-            f.write(
-                f"=== Log created {self.creation_time.strftime('%Y-%m-%d %H:%M:%S')} ===\n"
+            _ = f.write(
+                f"=== Log créé au {self.creation_time.strftime(self.time_format)} ===\n\n"
             )
 
-    def write(self, line: str) -> None:
-        """Write a line to the log, resetting file if 7 days have passed."""
-        # Check for reset
-        if self._is_week_old():
-            self.reset()
+    def write_entry(self, msg: str):
+        now = datetime.now()
 
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         with open(self.filename, "a", encoding="utf-8") as f:
-            f.write(f"[{timestamp}] {line}\n")
+            _ = f.write(f"{now.strftime(self.time_format)} - {msg}\n")
 
-    def reset(self) -> None:
-        """Reset the log file and update creation time."""
-        # Optionally back up the old log
-        if os.path.exists(self.filename):
-            backup_name = self.filename.replace(
-                ".log", f"_{self.creation_time.strftime('%Y-%m-%d_%H-%M-%S')}.log"
-            )
-            os.rename(self.filename, backup_name)
+    def clean(self):
+        if os.path.isfile(self.filename):
+            os.remove(self.filename)
 
-        # Create new file
-        self.creation_time = datetime.now()
-        with open(self.filename, "w", encoding="utf-8") as f:
-            f.write(
-                f"=== Log reset on {self.creation_time.strftime('%Y-%m-%d %H:%M:%S')} ===\n"
-            )
+
+# For test purposes
+if __name__ == "__main__":
+    logger = Logger()
+    logger.write_entry("Hello this is a test")
