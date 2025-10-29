@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 
 from config.config import PREFIX, TOKEN, intents
 
-from cogs.events import Events
+from cogs.events.core import Events
 from cogs.fun import Fun
 from cogs.music import Music
 
