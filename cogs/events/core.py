@@ -36,20 +36,32 @@ class Events(commands.Cog):
         self.tracker.add_message(message.author.id)
 
     @commands.Cog.listener()
-    async def on_voice_state_update(self, member: discord.Member, before: discord.VoiceChannel, after: discord.VoiceChannel):
+    async def on_voice_state_update(
+        self,
+        member: discord.Member,
+        before: discord.VoiceChannel,
+        after: discord.VoiceChannel,
+    ):
         if not any(role.id == OGSS_ROLE_ID for role in member.roles):
             return
         if before.channel is None and after.channel is not None:
             self.tracker.start_voice_session(member.id)
-            self.storage.add_log(member.id, "rejoint", after.channel.name, len(after.channel.members))
-            
+            self.storage.add_log(
+                member.id, "rejoint", after.channel.name, len(after.channel.members)
+            )
+
             self.logger.write_entry(
                 f"{member.global_name} a rejoint le salon vocal {after.channel.name}"
             )
 
         elif before.channel is not None and after.channel is None:
             self.tracker.stop_voice_session(member.id)
-            self.storage.add_log(member.id, "quitté", before.channel.name, len(before.channel.members) - 1)
+            self.storage.add_log(
+                member.id,
+                "quitté",
+                before.channel.name,
+                len(before.channel.members) - 1,
+            )
 
             self.logger.write_entry(
                 f"{member.global_name} a quitté le salon vocal {before.channel.name}"

@@ -18,18 +18,15 @@ class Logger:
                 f"=== Log créé au {self.creation_time.strftime(self.time_format)} ===\n\n"
             )
 
-    def write_logs(self, log_data: dict):
+    def write_logs(self, log_data: dict[str, str | int]):
+        line = (
+            f"{log_data['datetime']} - {log_data['username']} a "
+            f"{log_data['method']} le salon vocal {log_data['channel_name']} "
+            f"({log_data['population']} personne(s) présentes)\n"
+        )
         with open(self.filename, "a", encoding="utf-8") as f:
-            _ = f.write(f'{log_data["datetime"]} - {log_data["username"]} a {log_data["method"]} le salon vocal {log_data["channel_name"]} ({log_data["population"]} personne(s) présentes)\n')
-# {
-#     "id": row[0],
-#     "datetime": row[1],
-#     "user_id": row[2],
-#     "username": row[3],
-#     "method": row[4],
-#     "channel_name": row[5],
-#     "population": row[6],
-# }
+            _ = f.write(line)
+
     def clean(self):
         if os.path.isfile(self.filename):
             os.remove(self.filename)
@@ -39,8 +36,8 @@ class Logger:
 if __name__ == "__main__":
     from storage import Storage
     import csv
-    
-    storage = Storage()    
+
+    storage = Storage()
     logger = Logger()
     for log in storage.yield_logs():
         logger.write_logs(log)
