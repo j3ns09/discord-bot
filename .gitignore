@@ -1,4 +1,5 @@
 t.env
 test.py
-data_content.json
-__pycache__
+
+__pycache__/
+private/
