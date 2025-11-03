@@ -28,14 +28,26 @@ class Logger:
             _ = f.write(line)
 
     def clean(self):
-        if os.path.isfile(self.filename):
+        try:
             os.remove(self.filename)
+        except FileNotFoundError:
+            pass
+
+    def reset(self):
+        self.clean()
+        self.creation_time = datetime.now()
+        logs_dir = os.path.join("cogs", "events", "logs")
+        filename = f"trolleur_{self.creation_time.strftime('%Y-%m-%d')}.log"
+        self.filename = os.path.join(logs_dir, filename)
+        with open(self.filename, "w", encoding="utf-8") as f:
+            f.write(
+                f"=== Log créé au {self.creation_time.strftime(self.time_format)} ===\n\n"
+            )
 
 
 # For test purposes
 if __name__ == "__main__":
     from storage import Storage
-    import csv
 
     storage = Storage()
     logger = Logger()

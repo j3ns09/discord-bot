@@ -80,7 +80,6 @@ class Events(commands.Cog):
     async def reset_stats(self):
         if self.first_run:
             self.first_run = False
-            self.tracker.clear()
             return
 
         server: discord.Guild = self.bot.get_guild(SERVER_ID)
@@ -132,10 +131,15 @@ class Events(commands.Cog):
             f"Le plus actif est **{winner.display_name}**, rôle {winner_role.mention}"
         )
 
+        for log in self.storage.yield_logs():
+            self.logger.write_logs(log)
+
+        await channel.send("Les logs de la semaine:", file=self.logger.filename)
+
         # Reset
         self.tracker.clear()
         self.reset_date()
-        self.logger.clean()
+        self.logger.reset()
         self.storage.clear_logs()
 
     @reset_stats.before_loop
