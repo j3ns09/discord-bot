@@ -23,6 +23,7 @@ CREATE TABLE role_champion (
     role_id INTEGER NOT NULL,
     user_id INTEGER NOT NULL,
     champion_time INTEGER NOT NULL,
+    date TEXT NOT NULL,
     FOREIGN KEY (role_id) REFERENCES role(id),
     FOREIGN KEY (user_id) REFERENCES user(id)
 );
@@ -33,7 +34,7 @@ CREATE TABLE log (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     datetime TEXT NOT NULL,
     user_id INTEGER NOT NULL,
-    method TEXT NOT NULL,
+    method INTEGER NOT NULL,
     channel_name TEXT NOT NULL,
     population INT NOT NULL,
     FOREIGN KEY (user_id) REFERENCES user(id)

@@ -18,6 +18,9 @@ class Events(commands.Cog):
         self.start_date = current_date()
         self.first_run: bool = True
 
+    def reset_date(self):
+        self.start_date = current_date()
+
     @commands.Cog.listener()
     async def on_ready(self):
         print(f"{self.bot.user} is ready!")
@@ -39,32 +42,27 @@ class Events(commands.Cog):
     async def on_voice_state_update(
         self,
         member: discord.Member,
-        before: discord.VoiceChannel,
-        after: discord.VoiceChannel,
+        before: discord.VoiceState,
+        after: discord.VoiceState,
     ):
         if not any(role.id == OGSS_ROLE_ID for role in member.roles):
             return
         if before.channel is None and after.channel is not None:
             self.tracker.start_voice_session(member.id)
             self.storage.add_log(
-                member.id, "rejoint", after.channel.name, len(after.channel.members)
-            )
-
-            self.logger.write_entry(
-                f"{member.global_name} a rejoint le salon vocal {after.channel.name}"
+                member.id,
+                self.storage.methods.JOIN,
+                after.channel.name,
+                len(after.channel.members),
             )
 
         elif before.channel is not None and after.channel is None:
             self.tracker.stop_voice_session(member.id)
             self.storage.add_log(
                 member.id,
-                "quitté",
+                self.storage.methods.QUIT,
                 before.channel.name,
                 len(before.channel.members) - 1,
-            )
-
-            self.logger.write_entry(
-                f"{member.global_name} a quitté le salon vocal {before.channel.name}"
             )
 
     @commands.command(name="trolleur")
@@ -85,7 +83,7 @@ class Events(commands.Cog):
             self.tracker.clear()
             return
 
-        server = self.bot.get_guild(SERVER_ID)
+        server: discord.Guild = self.bot.get_guild(SERVER_ID)
         channel = self.bot.get_channel(OGS_CHANNEL_ID)
         await channel.send(
             f"**Stats de la semaine du {self.start_date.strftime('%d/%m/%y')}**"
@@ -136,8 +134,9 @@ class Events(commands.Cog):
 
         # Reset
         self.tracker.clear()
-        self.start_date = current_date()
+        self.reset_date()
         self.logger.clean()
+        self.storage.clear_logs()
 
     @reset_stats.before_loop
     async def before_reset_stats(self):
