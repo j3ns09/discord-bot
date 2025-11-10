@@ -23,6 +23,12 @@ class Storage:
         self.conn: sqlite3.Connection = sqlite3.connect(database)
         self.cursor: sqlite3.Cursor = self.conn.cursor()
 
+    # def __enter__(self):
+    #     return self
+
+    # def __exit__(self, exc_type, exc_val, exc_tb):
+    #     self.conn.close()
+
     def add_log(self, user_id: int, method: int, channel_name: str, population: int):
         time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         sql = "INSERT INTO log (datetime, user_id, method, channel_name, population) VALUES (?, ?, ?, ?, ?);"
@@ -103,14 +109,12 @@ if __name__ == "__main__":
     storage = Storage()
 
     bday_dir = os.path.join("private")
-    filename = "birthdays.csv"
-    birthdays = os.path.join(bday_dir, filename)
+    filename = "add_base_users.sql"
+    script = os.path.join(bday_dir, filename)
 
     # ajout des users de base
-    with open(birthdays, "r", encoding="utf-8") as f:
-        reader = csv.reader(f)
-        for i, line in enumerate(reader):
-            if i == 0:
-                continue
-            username, bday = line
-            storage.add_user(username, bday)
+    with open(script, "r", encoding="utf-8") as f:
+        schema = f.read()
+    
+    storage.conn.executescript(schema)
+    storage.conn.close()
