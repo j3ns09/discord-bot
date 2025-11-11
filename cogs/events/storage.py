@@ -1,7 +1,7 @@
+import os
+import sqlite3
 from datetime import date, datetime
 from enum import IntEnum
-import sqlite3
-import os
 
 
 class Methods(IntEnum):
@@ -35,10 +35,10 @@ class Storage:
         with self.conn:
             self.cursor.execute(sql, (time, user_id, method, channel_name, population))
 
-    def add_user(self, username: str, birthday: str):
-        sql = "INSERT INTO user (name, birthday) VALUES (?, ?);"
+    def add_user(self, user_id: int, username: str, birthday: str):
+        sql = "INSERT INTO user (id, name, birthday) VALUES (?, ?, ?);"
         with self.conn:
-            self.cursor.execute(sql, (username, birthday))
+            self.cursor.execute(sql, (user_id, username, birthday))
 
     def add_role(self, role_name: str):
         sql = "INSERT INTO role (name) VALUES (?);"
@@ -53,6 +53,13 @@ class Storage:
                 sql,
                 (user_id, role_id, time, victory_date),
             )
+
+    def get_user(self, user_id: int):
+        sql = "SELECT id, name, birthday, streak FROM user WHERE id = ?;"
+        with self.conn:
+            self.cursor.execute(sql, (user_id,))
+        r = self.cursor.fetchone()
+        return {"id": r[0], "name": r[1], "birthday": r[2], "streak": r[3]}
 
     def get_users(self):
         sql = "SELECT id, name, birthday, streak FROM user;"
@@ -92,7 +99,7 @@ class Storage:
             }
 
     def clear_logs(self):
-        sql = "DELETE FROM log"
+        sql = "DELETE FROM log;"
         self.cursor.execute(sql)
 
     def get_roles(self):
@@ -101,11 +108,16 @@ class Storage:
         rows = self.cursor.fetchall()
         return [{"id": r[0], "name": r[1]} for r in rows]
 
+    def get_champions(self):
+        fields = ("id", "user_id", "role_id", "champion_time", "date")
+        sql = "SELECT id, user_id, role_id, champion_time, date from role_champion;"
+        self.cursor.execute(sql)
+        rows = self.cursor.fetchall()
+        return [dict(zip(fields, row)) for row in rows]
+
 
 # Après le script setup create_db.py
 if __name__ == "__main__":
-    import csv
-
     storage = Storage()
 
     bday_dir = os.path.join("private")
@@ -115,6 +127,6 @@ if __name__ == "__main__":
     # ajout des users de base
     with open(script, "r", encoding="utf-8") as f:
         schema = f.read()
-    
+
     storage.conn.executescript(schema)
     storage.conn.close()

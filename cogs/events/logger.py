@@ -11,6 +11,7 @@ class Logger:
         os.makedirs(logs_dir, exist_ok=True)
         filename = f"trolleur_{self.creation_time.strftime('%Y-%m-%d')}.log"
 
+        self.dir = logs_dir
         self.filename: str = os.path.join(logs_dir, filename)
 
         with open(self.filename, "w", encoding="utf-8") as f:
@@ -21,7 +22,7 @@ class Logger:
     def write_logs(self, log_data: dict[str, str | int]):
         line = (
             f"{log_data['datetime']} - {log_data['username']} a "
-            f"{log_data['method']} le salon vocal {log_data['channel_name']} "
+            f"{'rejoint' if log_data['method'] == 0 else 'quitté'} le salon vocal {log_data['channel_name']} "
             f"({log_data['population']} personne(s) présentes)\n"
         )
         with open(self.filename, "a", encoding="utf-8") as f:

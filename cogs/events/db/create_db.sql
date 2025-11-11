@@ -1,5 +1,5 @@
 CREATE TABLE user (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
     birthday TEXT NOT NULL,
     streak INTEGER NOT NULL DEFAULT 0
@@ -7,7 +7,7 @@ CREATE TABLE user (
 
 CREATE TABLE role (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT
+    name TEXT NOT NULL
 );
 
 CREATE TABLE role_champion (
