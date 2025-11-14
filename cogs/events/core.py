@@ -5,9 +5,9 @@ from cogs.events.constants import *
 from cogs.events.tracking import Tracker
 from cogs.events.logger import Logger
 from cogs.events.storage import Storage
+from cogs.events.states import VoiceState
 from cogs.events.scoring import score, current_date
 from cogs.events.reporting import format_message_stats, format_voice_stats
-
 
 class Events(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -47,7 +47,10 @@ class Events(commands.Cog):
     ):
         if not any(role.id == OGSS_ROLE_ID for role in member.roles):
             return
-        if before.channel is None and after.channel is not None:
+        
+        state = VoiceState(before, after)
+        
+        if state.has_joined_voice:
             self.tracker.start_voice_session(member.id)
             self.storage.add_log(
                 member.id,
@@ -56,13 +59,31 @@ class Events(commands.Cog):
                 len(after.channel.members),
             )
 
-        elif before.channel is not None and after.channel is None:
+        elif state.has_left_voice:
             self.tracker.stop_voice_session(member.id)
             self.storage.add_log(
                 member.id,
                 self.storage.methods.QUIT,
                 before.channel.name,
                 len(before.channel.members) - 1,
+            )
+
+        if state.became_muted:
+            self.tracker.stop_voice_session(member.id)
+            self.storage.add_log(
+                member.id,
+                self.storage.methods.MUTE,
+                before.channel.name,
+                len(before.channel.members),
+            )
+
+        elif state.became_unmuted:
+            self.tracker.start_voice_session(member.id)
+            self.storage.add_log(
+                member.id,
+                self.storage.methods.UNMUTE,
+                after.channel.name,
+                len(after.channel.members),
             )
 
     @commands.command(name="trolleur")

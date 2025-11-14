@@ -7,6 +7,8 @@ from enum import IntEnum
 class Methods(IntEnum):
     JOIN = 0
     QUIT = 1
+    MUTE = 2
+    UNMUTE = 3
 
 
 class Storage:

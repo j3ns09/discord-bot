@@ -20,11 +20,30 @@ class Logger:
             )
 
     def write_logs(self, log_data: dict[str, str | int]):
-        line = (
-            f"{log_data['datetime']} - {log_data['username']} a "
-            f"{'rejoint' if log_data['method'] == 0 else 'quitté'} le salon vocal {log_data['channel_name']} "
-            f"({log_data['population']} personne(s) présentes)\n"
-        )
+        match log_data:
+            case 0:
+                method = "rejoint"
+            case 1:
+                method = "quitté"
+            case 2:
+                method = "mute"
+            case 3:
+                method = "unmute"
+        
+        if method < 2:
+            line = (
+                f"{log_data['datetime']} - {log_data['username']} a "
+                f"{method} le salon vocal {log_data['channel_name']} "
+                f"({log_data['population']} personne(s) présentes)\n"
+            )
+        else:
+            line = (
+                f"{log_data['datetime']} - {log_data['username']} s'est "
+                f"{method} dans le salon vocal {log_data['channel_name']} "
+                f"({log_data['population']} personne(s) présentes)\n"
+            )
+
+        
         with open(self.filename, "a", encoding="utf-8") as f:
             _ = f.write(line)
 
