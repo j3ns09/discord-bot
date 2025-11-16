@@ -155,7 +155,8 @@ class Events(commands.Cog):
         for log in self.storage.yield_logs():
             self.logger.write_logs(log)
 
-        await channel.send("Les logs de la semaine:", file=self.logger.filename)
+        log_channel = self.bot.get_channel(LOGS_CHANNEL_ID)
+        await log_channel.send("Les logs de la semaine:", file=self.logger.filename)
 
         # Reset
         self.tracker.clear()

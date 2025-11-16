@@ -20,7 +20,7 @@ class Logger:
             )
 
     def write_logs(self, log_data: dict[str, str | int]):
-        match log_data:
+        match log_data["method"]:
             case 0:
                 method = "rejoint"
             case 1:
@@ -30,7 +30,7 @@ class Logger:
             case 3:
                 method = "unmute"
         
-        if method < 2:
+        if log_data["method"] < 2:
             line = (
                 f"{log_data['datetime']} - {log_data['username']} a "
                 f"{method} le salon vocal {log_data['channel_name']} "

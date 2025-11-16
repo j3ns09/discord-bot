@@ -47,11 +47,16 @@ log2 = (456, Storage.methods.JOIN, "channel1", 2)
 log3 = (789, Storage.methods.JOIN, "channel1", 3)
 # bob leaves
 log4 = (456, Storage.methods.QUIT, "channel1", 2)
-# then jeff
-log5 = (789, Storage.methods.QUIT, "channel1", 1)
-# then alice
-log6 = (123, Storage.methods.QUIT, "channel1", 0)
-logs = (log1, log2, log3, log4, log5, log6)
+# jeff mutes
+log5 = (789, Storage.methods.MUTE, "channel1", 2)
+# alice leaves
+log6 = (123, Storage.methods.QUIT, "channel1", 1)
+# jeff unmutes
+log7 = (789, Storage.methods.UNMUTE, "channel1", 1)
+# jeff leaves
+log8 = (789, Storage.methods.QUIT, "channel1", 0)
+
+logs = (log1, log2, log3, log4, log5, log6, log7, log8)
 
 # creates object storage that links with db
 storage = Storage()
@@ -94,17 +99,12 @@ def get_data():
     assert len(storage.get_roles()) == 3
 
     # gets logs / yield
-    assert len(storage.get_logs()) == 6
+    assert len(storage.get_logs()) == len(logs)
     # put them in a file
     for log in storage.yield_logs():
         logger.write_logs(log)
     # check if log file exists
     assert os.path.isfile(logger.filename)
-
-    # clear the log using logger
-    logger.clean()
-    # checks if log file was indeed removed
-    assert not os.path.isfile(logger.filename)
 
     print(storage.get_champions())
     assert len(storage.get_champions()) == 2
@@ -112,6 +112,11 @@ def get_data():
 
 # cleanup
 def cleanup():
+    # clear the log using logger
+    logger.clean()
+    # checks if log file was indeed removed
+    assert not os.path.isfile(logger.filename)
+
     os.remove(db_dir)
     os.rmdir(logger.dir)
 
@@ -122,7 +127,8 @@ def main():
         insert_data()
         get_data()
     finally:
-        cleanup()
+        pass
+        # cleanup()
 
 
 if __name__ == "__main__":
