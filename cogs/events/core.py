@@ -2,12 +2,13 @@ import discord
 from discord.ext import commands, tasks
 
 from cogs.events.constants import *
-from cogs.events.tracking import Tracker
 from cogs.events.logger import Logger
-from cogs.events.storage import Storage
-from cogs.events.states import VoiceState
-from cogs.events.scoring import score, current_date
 from cogs.events.reporting import format_message_stats, format_voice_stats
+from cogs.events.scoring import current_date, score
+from cogs.events.states import VoiceState
+from cogs.events.storage import Methods, Storage
+from cogs.events.tracking import Tracker
+
 
 class Events(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -47,14 +48,14 @@ class Events(commands.Cog):
     ):
         if not any(role.id == OGSS_ROLE_ID for role in member.roles):
             return
-        
+
         state = VoiceState(before, after)
-        
+
         if state.has_joined_voice:
             self.tracker.start_voice_session(member.id)
             self.storage.add_log(
                 member.id,
-                self.storage.methods.JOIN,
+                Methods.JOIN,
                 after.channel.name,
                 len(after.channel.members),
             )
@@ -63,7 +64,7 @@ class Events(commands.Cog):
             self.tracker.stop_voice_session(member.id)
             self.storage.add_log(
                 member.id,
-                self.storage.methods.QUIT,
+                Methods.QUIT,
                 before.channel.name,
                 len(before.channel.members) - 1,
             )
@@ -72,7 +73,7 @@ class Events(commands.Cog):
             self.tracker.stop_voice_session(member.id)
             self.storage.add_log(
                 member.id,
-                self.storage.methods.MUTE,
+                Methods.MUTE,
                 before.channel.name,
                 len(before.channel.members),
             )
@@ -81,7 +82,7 @@ class Events(commands.Cog):
             self.tracker.start_voice_session(member.id)
             self.storage.add_log(
                 member.id,
-                self.storage.methods.UNMUTE,
+                Methods.UNMUTE,
                 after.channel.name,
                 len(after.channel.members),
             )

@@ -3,6 +3,8 @@ import sqlite3
 from datetime import date, datetime
 from enum import IntEnum
 
+from .db.create_db import initialize_db
+
 
 class Methods(IntEnum):
     JOIN = 0
@@ -12,15 +14,13 @@ class Methods(IntEnum):
 
 
 class Storage:
-    methods: type[Methods] = Methods
-
     def __init__(self):
         db_dir = os.path.join("cogs", "events", "db")
         filename = "alexandre.db"
         database = os.path.join(db_dir, filename)
 
         if not os.path.exists(database):
-            raise FileNotFoundError
+            initialize_db()
 
         self.conn: sqlite3.Connection = sqlite3.connect(database)
         self.cursor: sqlite3.Cursor = self.conn.cursor()

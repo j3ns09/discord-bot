@@ -29,7 +29,7 @@ class Logger:
                 method = "mute"
             case 3:
                 method = "unmute"
-        
+
         if log_data["method"] < 2:
             line = (
                 f"{log_data['datetime']} - {log_data['username']} a "
@@ -43,7 +43,6 @@ class Logger:
                 f"({log_data['population']} personne(s) présentes)\n"
             )
 
-        
         with open(self.filename, "a", encoding="utf-8") as f:
             _ = f.write(line)
 

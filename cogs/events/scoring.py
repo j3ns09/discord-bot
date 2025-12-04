@@ -1,11 +1,12 @@
 import time
 from datetime import date, datetime
 
+MESSAGE_COEFF = 1
+VOICE_COEFF = 2.5
+
 
 def score(nb_messages: int, voice_time: int) -> float:
-    message_coeff = 1
-    voice_coeff = 2.5
-    return nb_messages * message_coeff + (voice_time / 60) * voice_coeff
+    return nb_messages * MESSAGE_COEFF + (voice_time / 60) * VOICE_COEFF
 
 
 def current_date() -> date:

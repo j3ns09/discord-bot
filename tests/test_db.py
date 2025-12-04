@@ -4,28 +4,17 @@ import os
 import sys
 
 # Get the parent directory of this file (project_root)
-PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+PROJECT_ROOT = os.getcwd()
 sys.path.insert(0, PROJECT_ROOT)
+print(PROJECT_ROOT)
 
 # Creation of the database using create_db.py and create_db.sql
 from cogs.events.db.create_db import initialize_db
 from cogs.events.logger import Logger
-from cogs.events.storage import Storage
-
-# creates the db
-initialize_db()
-
-
-# checks its existence
-db_dir = os.path.join("cogs", "events", "db", "alexandre.db")
-
-
-def check_existence():
-    assert os.path.isfile(db_dir)
-
+from cogs.events.storage import Methods, Storage
 
 # user data
-# has to be (name, birthday)
+# has to be (id, name, birthday)
 user1 = (123, "alice", "2000-01-01")
 user2 = (456, "bob", "2002-11-21")
 user3 = (789, "jeff", "2006-08-12")
@@ -40,26 +29,34 @@ role3 = "big"
 # has to be (user id, method, channel name, population)
 
 # alice was the first to join, population is now 1
-log1 = (123, Storage.methods.JOIN, "channel1", 1)
+log1 = (123, Methods.JOIN, "channel1", 1)
 # then comes bob
-log2 = (456, Storage.methods.JOIN, "channel1", 2)
+log2 = (456, Methods.JOIN, "channel1", 2)
 # and then jeff
-log3 = (789, Storage.methods.JOIN, "channel1", 3)
+log3 = (789, Methods.JOIN, "channel1", 3)
 # bob leaves
-log4 = (456, Storage.methods.QUIT, "channel1", 2)
+log4 = (456, Methods.QUIT, "channel1", 2)
 # jeff mutes
-log5 = (789, Storage.methods.MUTE, "channel1", 2)
+log5 = (789, Methods.MUTE, "channel1", 2)
 # alice leaves
-log6 = (123, Storage.methods.QUIT, "channel1", 1)
+log6 = (123, Methods.QUIT, "channel1", 1)
 # jeff unmutes
-log7 = (789, Storage.methods.UNMUTE, "channel1", 1)
+log7 = (789, Methods.UNMUTE, "channel1", 1)
 # jeff leaves
-log8 = (789, Storage.methods.QUIT, "channel1", 0)
+log8 = (789, Methods.QUIT, "channel1", 0)
 
 logs = (log1, log2, log3, log4, log5, log6, log7, log8)
 
-# creates object storage that links with db
+# creates object storage that links with db and also creates it if it doesn't exists
 storage = Storage()
+
+# checks its existence
+db_dir = os.path.join("cogs", "events", "db", "alexandre.db")
+
+
+def check_existence():
+    assert os.path.isfile(db_dir)
+
 
 # creates object logger for log in db
 logger = Logger()
@@ -106,7 +103,6 @@ def get_data():
     # check if log file exists
     assert os.path.isfile(logger.filename)
 
-    print(storage.get_champions())
     assert len(storage.get_champions()) == 2
 
 
@@ -127,8 +123,8 @@ def main():
         insert_data()
         get_data()
     finally:
-        pass
-        # cleanup()
+        cleanup()
+    print("All tests passed successfully.")
 
 
 if __name__ == "__main__":
